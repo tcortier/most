@@ -64,7 +64,7 @@ str(zf)
 #On fait une PCA sur tous les types d'habitats
 respcapro = FactoMineR::PCA(X = zoo, # the data set used. Rows are individuals and columns are numeric variables.
                          scale.unit = TRUE,  #if TRUE, the data are scaled to unit variance before the analysis. 
-                         quali.sup = c(1:29,34,35,48,49,50,51,53,54,55),
+                         quali.sup = c(1:29,34,35,48,49,50,51,53),
                          graph = F, #if TRUE, the graphs are displayed.
                          ncp = 5) #indexes of the annotation columns
 
@@ -99,17 +99,41 @@ ind$contrib
 fviz_pca_ind(respcafermes, axes = c(1,2), habillage = 'Description',invisible = 'quali',label='none')
 fviz_pca_biplot(respcafermes, axes = c(1,2), habillage = 'Description',select.var = list(contrib = 6),invisible = 'quali')
 #corrplot(respcapro$var$cos2)
+
 barplot(respcafermes$var$contrib[,1],las=2)
 barplot(respcafermes$var$contrib[,2],las=2)
 respcafermes$var$contrib
 fviz_pca_ind(respcafermes, axes = c(1,2), habillage = 'Description',invisible = 'quali',label='none')
 barplot(respcafermes$var$contrib[,2],las=2)
-fviz_pca_var(respcafermes, axes = c(1,2), choix = 'var', select.var = list(contrib = 10))
+fviz_pca_ind(respcafermes, axes = c(1,2), habillage = 'Description',invisible = 'quali',label='none')
+fviz_pca_var(respcafermes, axes = c(1,2), choix = 'var', select.var = list(contrib = 8))
 
 
 
 count(zf$Feeding.Preference)
 count(zf$Genus.Morphon)
+
+##Test statistique du phosphate selon les fermes
+
+mod.phos<-lm(Soil.phosphate~Description,data=fermes)
+
+par(mfrow = c(2,2))
+plot(mod.phos)
+summary(mod.phos)
+anova(mod.phos)
+pairwise.t.test(fermes$Soil.phosphate,fermes$Description,p.adjust.method = "holm")
+ggplot(fermes, aes(Description,Soil.phosphate))+ geom_dotplot(binaxis = "y",stackdir = "center",alpha=0.2,col=2)+geom_violin(alpha=0.2,col=2,draw_quantiles = c(0.5))
+
+#Test avec l'azote
+
+ggplot(fermes, aes(Description,Total.N.input))+ geom_dotplot(binaxis = "y",stackdir = "center",alpha=0.2,col=2)+geom_violin(alpha=0.2,col=2,draw_quantiles = c(0.5))
+fermes["log.total.N"]<-fermes
+mod.N<-lm(Total.N.input~Description,data=fermes)
+
+par(mfrow = c(2,2))
+plot(mod.N)
+summary(mod.N)
+anova(mod.N)
 
 ##Influence avec le nombre de taxas
 
@@ -324,4 +348,13 @@ plot(fermes$biom.totale~fermes$N.tot,col=fermes$Description)
 plot(fermes$abundance~fermes$Total.N.input,col=fermes$Description)
 plot(zoo$Slope.of.AMR~zoo$Description)
 
-plot(zoo$Vegetation.cover....,zoo$biom.totale)
+plot(fermes$Taxa.S~fermes$Soil.phosphate)
+
+mod.mixte<-lme(Taxa.S ~  Airborne.N + Total.N.input + Soil.Cd + 
+                 Soil.Hg + Soil.Pb + Soil.Zn + Max.rainfall,data=zoo,random =~1|Description,method = "ML")
+par(mfrow = c(2,2))
+plot(mod.mixte)
+summary(mod.mixte)
+anova(mod.mixte)
+
+ggplot(zoo, aes(Soil.phosphate,Taxa.S))+geom_smooth(aes(color = Description),se=FALSE)
