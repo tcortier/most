@@ -30,7 +30,8 @@ for (i in 10:34){
   zoo[names(zf)[i]]<-v
 }
 
-#Etude de la répartition des espèces par site
+#Analyse descriptive de la composition des sols
+
 
 stat<-as.data.frame(table(zf$Genus.Morphon,zf$Web.ID))
 
@@ -50,7 +51,50 @@ boxplot(zf$Average.T~zf$Description,las=2)
 boxplot(zf$Vegetation.cover....~zf$Description,las=2)
 boxplot(zoo$Average.T~zoo$Description,las=2)
 boxplot(zoo$Average.Tmax~zoo$Description,las=2)
+ggplot(zoo, aes(Description, Soil.Zn ))+geom_boxplot()+theme(axis.text.x = element_text(angle = 25, hjust = 1))
+dev.print(device = png, file = "figures/soilZn.png", width = 600)
+ggplot(zoo, aes(Description, Soil.Cu ))+geom_boxplot()+theme(axis.text.x = element_text(angle = 25, hjust = 1))
+dev.print(device = png, file = "figures/soilCu.png", width = 600)
+ggplot(zoo, aes(Description, Soil.pH ))+geom_boxeplot()+theme(axis.text.x = element_text(angle = 25, hjust = 1))
+dev.print(device = png, file = "figures/soilpH.png", width = 600)
+ggplot(zoo, aes(Description, Soil.phosphate ))+geom_boxplot()+theme(axis.text.x = element_text(angle = 25, hjust = 1))
+dev.print(device = png, file = "figures/soilphosphate.png", width = 600)
 
+mod.Zn<-lm(Soil.Zn~Description,data=zoo)
+par(mfrow = c(2,2))
+plot(mod.Zn)
+summary(mod.Zn)
+anova(mod.Zn)
+Znpair=pairwise.t.test(zoo$Soil.Zn,zoo$Description,p.adjust.method = "bonferroni")
+Znpair
+mod.pH<-lm(Soil.pH~Description,data=zoo)
+par(mfrow = c(2,2))
+plot(mod.)
+summary(mod.pH)
+anova(mod.pH)
+pHpair=pairwise.t.test(zoo$Soil.pH,zoo$Description,p.adjust.method = "bonferroni")
+pHpair
+mod.phosphate<-lm(Soil.phosphate~Description,data=zoo)
+par(mfrow = c(2,2))
+plot(mod.phosphate)
+summary(mod.phosphate)
+anova(mod.phosphate)
+phosphatepair=pairwise.t.test(zoo$Soil.phosphate,zoo$Description,p.adjust.method = "bonferroni")
+phosphatepair
+mod.Cu<-lm(Soil.Cu~Description,data=zoo)
+par(mfrow = c(2,2))
+plot(mod.Cu)
+summary(mod.Cu)
+anova(mod.Cu)
+Cupair=pairwise.t.test(zoo$Soil.Cu,zoo$Description,p.adjust.method = "bonferroni")
+Cupair
+
+Cu<-lme(Soil.Cu~Description,data = zoo,random =~1|Average.T,method = "ML")
+par(mfrow = c(2,2))
+plot(Cu)
+summary(Cu)
+anova(Cu)
+anova(mod.Cu,Cu)
 
 #PCA results and soil quality separation
 
@@ -74,12 +118,15 @@ ind <- get_pca_ind(respcapro)
 ind$coord
 ind$contrib
 fviz_pca_ind(respcapro, axes = c(1,2), habillage = 'Description',invisible = 'quali',label='none')
+dev.print(device = png, file = "figures/PCAall.png", width = 600)
 fviz_pca_biplot(respcapro, axes = c(1,2), habillage = 'Description',select.var = list(contrib = 6),invisible = 'quali')
+
 #corrplot(respcapro$var$cos2)
 barplot(respcapro$var$contrib[,1],las=2)
 barplot(respcapro$var$contrib[,2],las=2)
 respcapro$var$contrib
 fviz_pca_var(respcapro, axes = c(1,2), choix = 'var', select.var = list(contrib = 6))
+dev.print(device = png, file = "figures/PCAallfeatures.png", width = 600)
 
 zoo$PCA.dim.1<-respcapro$ind$coord[,1]
 
@@ -87,7 +134,7 @@ zoo$PCA.dim.1<-respcapro$ind$coord[,1]
 fermes=zoo[(zoo$Ecosystem.Type.ID==1)|(zoo$Ecosystem.Type.ID==2)|(zoo$Ecosystem.Type.ID==3)|(zoo$Ecosystem.Type.ID==4),]
 respcafermes = FactoMineR::PCA(X = fermes, # the data set used. Rows are individuals and columns are numeric variables.
                             scale.unit = TRUE,  #if TRUE, the data are scaled to unit variance before the analysis. 
-                            quali.sup = c(1:29,34,35,48,49,50,51,53,54,55,56),
+                            quali.sup = c(1:29,34,35,48,49,50,51,53),
                             graph = F, #if TRUE, the graphs are displayed.
                             ncp = 5) #indexes of the annotation columns
 
@@ -97,8 +144,30 @@ ind <- get_pca_ind(respcafermes)
 ind$coord
 ind$contrib
 fviz_pca_ind(respcafermes, axes = c(1,2), habillage = 'Description',invisible = 'quali',label='none')
+dev.print(device = png, file = "figures/PCAfermes.png", width = 600)
 fviz_pca_biplot(respcafermes, axes = c(1,2), habillage = 'Description',select.var = list(contrib = 6),invisible = 'quali')
 #corrplot(respcapro$var$cos2)
+
+#Faisons les tests sur les paramètres intéressants pour les fermes
+
+mod.phosphate.fermes<-lm(Soil.phosphate~Description,data=fermes)
+par(mfrow = c(2,2))
+plot(mod.phosphate.fermes)
+summary(mod.phosphate.fermes)
+anova(mod.phosphate.fermes)
+phosphatefermespair=pairwise.t.test(fermes$Soil.phosphate,fermes$Description,p.adjust.method = "bonferroni")
+phosphatefermespair
+
+mod.Ni.fermes<-lm(Soil.Ni~Description,data=fermes)
+par(mfrow = c(2,2))
+plot(mod.Ni.fermes)
+summary(mod.Ni.fermes)
+anova(mod.Ni.fermes)
+Nifermespair=pairwise.t.test(fermes$Soil.Ni,fermes$Description,p.adjust.method = "bonferroni")
+Nifermespair
+
+
+
 
 barplot(respcafermes$var$contrib[,1],las=2)
 barplot(respcafermes$var$contrib[,2],las=2)
@@ -106,8 +175,16 @@ respcafermes$var$contrib
 fviz_pca_ind(respcafermes, axes = c(1,2), habillage = 'Description',invisible = 'quali',label='none')
 barplot(respcafermes$var$contrib[,2],las=2)
 fviz_pca_ind(respcafermes, axes = c(1,2), habillage = 'Description',invisible = 'quali',label='none')
-fviz_pca_var(respcafermes, axes = c(1,2), choix = 'var', select.var = list(contrib = 8))
+fviz_pca_var(respcafermes, axes = c(1,2), choix = 'var', select.var = list(contrib = 6))
+dev.print(device = png, file = "figures/PCAfermesfeatures.png", width = 600)
 
+#Les boxplot des éléments chimiques du sol dans les fermes
+
+ggplot(fermes, aes(Description, Soil.Ni ))+geom_boxplot()+theme(axis.text.x = element_text(angle = 25, hjust = 1))
+dev.print(device = png, file = "figures/soilNifermes.png", width = 600)
+ggplot(fermes, aes(Description, Soil.phosphate ))+geom_boxplot()+theme(axis.text.x = element_text(angle = 25, hjust = 1))
+dev.print(device = png, file = "figures/soilPfermes.png", width = 600)
+ggplot(fermes, aes(Description, P.pore.water ))+geom_boxplot()+theme(axis.text.x = element_text(angle = 25, hjust = 1))
 
 
 count(zf$Feeding.Preference)
@@ -135,10 +212,27 @@ plot(mod.N)
 summary(mod.N)
 anova(mod.N)
 
+####Section sur la biodiversité
 ##Influence avec le nombre de taxas
-
+par(mfrow = c(1,1))
 boxplot(zf$Taxa.S~zf$Description,las=2)
 
+plot(zf$Soil.pH,zf$Taxa.S,las=2,col=zf$Description)
+
+mod1<-lm(Taxa.S~Description,data=zoo)
+mod1bis<-glm(Taxa.S~Description+Soil.pH,family = poisson(link = "log"),data = zoo)
+mod2<-lme(Taxa.S~Description,random =~1|Average.T,data=zoo,method="ML")
+mod5<-gls(Taxa.S~Description,data=zoo,correlation = corAR1(0.5,~Average.T),method="ML")
+par(mfrow = c(2,2))
+plot(mod1)
+summary(mod1)
+summary(mod1bis)
+anova(mod1)
+summary(mod2)
+anova(mod2,mod1)
+modpH<-glm(Taxa.S~Soil.pH,family = poisson(link = "log"),data = zoo)
+summary(mopH)
+anova(modpH)
 mod1<-lm(Taxa.S~Description,data=zoo)
 par(mfrow = c(2,2))
 plot(mod1)
@@ -157,7 +251,7 @@ for (j in ind){
   somme=0
   sh=0
   for (i in 1:length(v)){
-    feed[[v[i]%%10]]<-feed[[v[i]%%10]]+exp(w[i])
+    feed[[v[i]%/%10]]<-feed[[v[i]%/%10]]+exp(w[i])
     somme=somme+exp(w[i])
   }
   for (k in 1:9){
@@ -170,9 +264,35 @@ for (j in ind){
   shannon.trophic<-c(shannon.trophic,sh)
 }
 
+ind<-c(95:138,140:173,175:194,196:232)
+shannon.taxa<-c()
+for (j in ind){
+  v=zf[zf$Web.ID==j,]$Trophic.ID
+  w=zf[zf$Web.ID==j,]$Log.Biomass.
+  tax<-list(0,0,0,0,0)
+  somme=0
+  sh=0
+  for (i in 1:length(v)){
+    cat(v[i]%%10)
+    tax[[v[i]%%10]]<-tax[[v[i]%%10]]+exp(w[i])
+    somme=somme+exp(w[i])
+  }
+  for (k in 1:5){
+    if (tax[[k]]!=0){
+      r=tax[[k]]/somme
+      sh=sh-r*log2(r)
+    }
+    
+  }
+  shannon.taxa<-c(shannon.taxa,sh)
+}
+
 zoo["shannon.trophic"]<-shannon.trophic
+zoo["shannon.taxa"]<-shannon.taxa
 
 ggplot(zoo, aes(Description,shannon.trophic ))+ geom_dotplot(binaxis = "y",stackdir = "center",alpha=0.2,col=2)+geom_violin(alpha=0.2,col=2)
+ggplot(zoo, aes(Description,shannon.trophic ))+geom_boxplot()+theme(axis.text.x = element_text(angle = 25, hjust = 1))
+ggplot(zoo, aes(Description,shannon.taxa ))+geom_boxplot()+theme(axis.text.x = element_text(angle = 25, hjust = 1))
 
 plot(zoo$shannon.trophic~zoo$PCA.dim.1,col=zoo$Description)
 plot(zoo$Taxa.S~zoo$PCA.dim.1,col=zoo$Description)
